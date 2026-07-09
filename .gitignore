@@ -3,3 +3,4 @@ target/
 *.rs.bak
 Cargo.lock
 Plan.md
+test_snapshots/
