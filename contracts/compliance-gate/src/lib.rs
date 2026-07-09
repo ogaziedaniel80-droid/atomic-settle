@@ -60,3 +60,6 @@ impl ComplianceGate {
     }
 }
 
+#[cfg(test)]
+mod test;
+
