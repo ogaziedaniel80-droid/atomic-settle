@@ -1,0 +1,67 @@
+<div class="trade-detail" [class]="stateClass">
+  <div class="trade-header">
+    <span class="trade-id">{{ trade.tradeId | slice:0:16 }}...</span>
+    <span class="state-badge">{{ trade.state }}</span>
+    <span class="expiry-badge" [class.expiring-soon]="trade.expiryLedger <= 100500">
+      Expiry: {{ trade.expiryLedger }}
+    </span>
+  </div>
+
+  <div class="trade-body">
+    <div class="trade-parties">
+      <div class="party">
+        <strong>Party A</strong>
+        <span class="address">{{ trade.partyA | slice:0:8 }}...</span>
+        @if (trade.cashLocked) { <span class="tag tag-locked">Cash Locked</span> }
+      </div>
+      <div class="party">
+        <strong>Party B</strong>
+        <span class="address">{{ trade.partyB | slice:0:8 }}...</span>
+        @if (trade.assetLocked) { <span class="tag tag-locked">Asset Locked</span> }
+      </div>
+    </div>
+
+    <div class="trade-assets">
+      <div class="asset">
+        <span class="label">Cash:</span>
+        <span class="value">{{ trade.cashAmount }} {{ trade.cashToken | slice:0:8 }}...</span>
+      </div>
+      <div class="asset">
+        <span class="label">Asset:</span>
+        <span class="value">{{ trade.assetAmount }} {{ trade.assetToken | slice:0:8 }}...</span>
+      </div>
+    </div>
+
+    <div class="trade-actions">
+      @if (canLockCash) {
+        <button class="btn btn-sm btn-outline-success" (click)="lockCash()" [disabled]="loading">
+          Lock Cash
+        </button>
+      }
+      @if (canLockAsset) {
+        <button class="btn btn-sm btn-outline-info" (click)="lockAsset()" [disabled]="loading">
+          Lock Asset
+        </button>
+      }
+      @if (canSettle) {
+        <button class="btn btn-sm btn-success" (click)="settle()" [disabled]="loading">
+          Settle
+        </button>
+      }
+      @if (canCancel) {
+        <button class="btn btn-sm btn-outline-warning" (click)="cancel()" [disabled]="loading">
+          Cancel
+        </button>
+      }
+      @if (canRefund) {
+        <button class="btn btn-sm btn-outline-secondary" (click)="refund()" [disabled]="loading">
+          Refund
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (error) {
+    <div class="alert alert-danger mt-2">{{ error }}</div>
+  }
+</div>

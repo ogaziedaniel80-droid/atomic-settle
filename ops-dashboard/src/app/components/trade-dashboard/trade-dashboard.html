@@ -1,0 +1,84 @@
+<div class="dashboard">
+  <header class="dashboard-header">
+    <h1>Atomic Settle Dashboard</h1>
+    <div class="header-controls">
+      <span class="ws-status" [class.connected]="wsConnected">
+        {{ wsConnected ? 'Live' : 'Disconnected' }}
+      </span>
+      <button class="btn btn-outline-primary btn-sm" (click)="loadTrades()" [disabled]="loading">
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <div class="dashboard-grid">
+    <aside class="dashboard-sidebar">
+      <div class="card">
+        <div class="card-header">Create Trade</div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Party A</label>
+            <input type="text" class="form-control" [(ngModel)]="newTrade.partyA" placeholder="G..." />
+          </div>
+          <div class="form-group">
+            <label>Party B</label>
+            <input type="text" class="form-control" [(ngModel)]="newTrade.partyB" placeholder="G..." />
+          </div>
+          <div class="form-group">
+            <label>Cash Token</label>
+            <input type="text" class="form-control" [(ngModel)]="newTrade.cashToken" placeholder="C..." />
+          </div>
+          <div class="form-group">
+            <label>Cash Amount</label>
+            <input type="text" class="form-control" [(ngModel)]="newTrade.cashAmount" placeholder="1000000000" />
+          </div>
+          <div class="form-group">
+            <label>Asset Token</label>
+            <input type="text" class="form-control" [(ngModel)]="newTrade.assetToken" placeholder="C..." />
+          </div>
+          <div class="form-group">
+            <label>Asset Amount</label>
+            <input type="text" class="form-control" [(ngModel)]="newTrade.assetAmount" placeholder="100" />
+          </div>
+          <div class="form-group">
+            <label>Expiry Ledger</label>
+            <input type="number" class="form-control" [(ngModel)]="newTrade.expiryLedger" />
+          </div>
+          <button class="btn btn-primary w-full" (click)="createTrade()" [disabled]="loading">
+            Create Trade
+          </button>
+        </div>
+      </div>
+
+      <app-exception-panel [trades]="trades"></app-exception-panel>
+    </aside>
+
+    <main class="dashboard-main">
+      <div class="toolbar">
+        <div class="toolbar-title">
+          Trades ({{ trades.length }})
+          @if (loading) { <span class="spinner"></span> }
+        </div>
+      </div>
+
+      @if (error) {
+        <div class="alert alert-danger">{{ error }}</div>
+      }
+
+      @if (trades.length === 0 && !loading) {
+        <div class="empty-state">
+          No trades yet. Create one using the form.
+        </div>
+      }
+
+      <div class="trade-grid">
+        @for (trade of trades; track trade.tradeId) {
+          <app-trade-detail
+            [trade]="trade"
+            (updated)="loadTrades()"
+          />
+        }
+      </div>
+    </main>
+  </div>
+</div>
