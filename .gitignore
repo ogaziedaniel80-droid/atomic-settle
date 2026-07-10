@@ -4,3 +4,5 @@ target/
 Cargo.lock
 Plan.md
 test_snapshots/
+.env
+orchestrator/node_modules
