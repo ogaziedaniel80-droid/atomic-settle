@@ -1,0 +1,50 @@
+<div class="exception-panel">
+  <h3 class="panel-title">Exceptions & Alerts</h3>
+
+  @if (!hasExceptions) {
+    <div class="no-exceptions">No active exceptions</div>
+  }
+
+  @if (nearExpiryTrades.length > 0) {
+    <div class="exception-section">
+      <h4 class="section-title warning">Near Expiry ({{ nearExpiryTrades.length }})</h4>
+      @for (trade of nearExpiryTrades; track trade.tradeId) {
+        <div class="exception-item warning">
+          <span class="trade-ref">{{ trade.tradeId | slice:0:12 }}...</span>
+          <span class="state">{{ trade.state }}</span>
+          <span class="expiry">Expiry: {{ trade.expiryLedger }}</span>
+        </div>
+      }
+    </div>
+  }
+
+  @if (failedTrades.length > 0) {
+    <div class="exception-section">
+      <h4 class="section-title danger">Failed / Refunding ({{ failedTrades.length }})</h4>
+      @for (trade of failedTrades; track trade.tradeId) {
+        <div class="exception-item danger">
+          <span class="trade-ref">{{ trade.tradeId | slice:0:12 }}...</span>
+          <span class="state">{{ trade.state }}</span>
+          <button class="btn btn-xs btn-outline-secondary" (click)="trade.tradeId && api.refundTrade(trade.tradeId)">
+            Refund
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  @if (recentAlerts.length > 0) {
+    <div class="exception-section">
+      <h4 class="section-title info">Recent Events ({{ recentAlerts.length }})</h4>
+      <div class="alert-list">
+        @for (alert of recentAlerts; track alert.timestamp) {
+          <div class="alert-item">
+            <span class="alert-event">{{ alert.event }}</span>
+            <span class="alert-trade">{{ alert.tradeId | slice:0:12 }}...</span>
+            <span class="alert-time">{{ alert.timestamp | date:'HH:mm:ss' }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
