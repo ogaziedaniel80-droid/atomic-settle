@@ -1,0 +1,30 @@
+<div class="wallet-connect">
+  @if (!freighterAvailable) {
+    <div class="alert alert-warning">
+      Freighter wallet not detected.
+      <a href="https://freighter.app" target="_blank" rel="noopener">Install Freighter</a>
+    </div>
+  }
+
+  @if (wallet$ | async; as wallet) {
+    @if (wallet.connected && wallet.publicKey) {
+      <div class="wallet-info">
+        <span class="wallet-icon">&#x1F511;</span>
+        <span class="wallet-address">{{ wallet.publicKey | slice:0:8 }}...{{ wallet.publicKey | slice:-4 }}</span>
+        <button class="btn btn-sm btn-outline-danger" (click)="disconnect()">Disconnect</button>
+      </div>
+    } @else {
+      <button class="btn btn-primary" (click)="connect()" [disabled]="connecting">
+        @if (connecting) {
+          Connecting...
+        } @else {
+          Connect Freighter Wallet
+        }
+      </button>
+    }
+  }
+
+  @if (error) {
+    <div class="alert alert-danger mt-2">{{ error }}</div>
+  }
+</div>
