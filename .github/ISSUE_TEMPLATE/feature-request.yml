@@ -1,0 +1,70 @@
+name: Feature request
+description: Propose a new feature or improvement
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to propose an improvement.
+        
+        Before opening, please check the [Roadmap](../../README.md#roadmap) and existing issues to avoid duplicates.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the system would this affect?
+      options:
+        - settlement-escrow contract
+        - compliance-gate contract
+        - netting-engine contract (phase 2)
+        - orchestrator (NestJS)
+        - ops-dashboard (Angular)
+        - deploy scripts
+        - documentation
+        - other / cross-cutting
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this solve? What limitation or gap does it address?
+      placeholder: "Currently, there is no way to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature or change you'd like to see. Be as specific as you can.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you consider, and why did you rule them out?
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking change?
+      description: Would this require changes to existing contract interfaces, API responses, or deployment procedures?
+      options:
+        - "No"
+        - "Yes — contract interface change"
+        - "Yes — orchestrator API change"
+        - "Yes — deployment procedure change"
+        - "Unsure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: References, prior art, related issues, or any other relevant information.

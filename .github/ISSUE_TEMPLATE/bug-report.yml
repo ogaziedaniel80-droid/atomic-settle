@@ -1,0 +1,84 @@
+name: Bug report
+description: Something isn't working correctly
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill in as much detail as you can.
+        
+        > **Security vulnerability?** Do not open a public issue — see [SECURITY.md](../../SECURITY.md) instead.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of the system is affected?
+      options:
+        - settlement-escrow contract
+        - compliance-gate contract
+        - orchestrator (NestJS)
+        - ops-dashboard (Angular)
+        - deploy scripts
+        - documentation
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of the bug.
+      placeholder: What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to reproduce the behaviour.
+      placeholder: |
+        1. Deploy contracts with `./scripts/deploy-testnet.sh`
+        2. Call `init_trade()` with these parameters: ...
+        3. Call `lock_cash_leg()` ...
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What actually happened? Include error messages, stack traces, or transaction hashes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Fill in the relevant versions.
+      value: |
+        - Rust version (`rustc --version`):
+        - stellar CLI version (`stellar --version`):
+        - Node.js version (`node --version`):
+        - Network: [ ] local  [ ] testnet  [ ] mainnet
+        - OS:
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other information — contract addresses, transaction IDs, ledger numbers, etc.
