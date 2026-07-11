@@ -34,13 +34,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint || true
-        # '|| true' allows PRs to land while the initial lint baseline is being established.
-        # Remove once all lint errors are resolved.
-
-      - name: Unit tests (headless)
-        run: npm test -- --watch=false --browsers=ChromeHeadless
+      - name: Unit tests
+        run: npm test -- --watch=false
 
       - name: Production build
         run: npm run build

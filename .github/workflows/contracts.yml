@@ -16,8 +16,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  # Pin the Rust toolchain to keep builds reproducible
-  RUST_TOOLCHAIN: "1.82.0"
 
 jobs:
   test:
@@ -36,7 +34,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          toolchain: stable
           targets: wasm32v1-none
 
       - name: Cache Cargo registry and build output
@@ -86,7 +84,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          toolchain: stable
           targets: wasm32v1-none
 
       - name: Cache Cargo
