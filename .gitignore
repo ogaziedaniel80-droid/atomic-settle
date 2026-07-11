@@ -1,8 +1,19 @@
-# Rust
+# Rust build artifacts
 target/
 *.rs.bak
-Cargo.lock
-Plan.md
 test_snapshots/
+
+# Cargo.lock: committed for contracts (preserves dependency pins like ed25519-dalek).
+# Remove this line if you add a workspace-level Cargo.lock.
+# Cargo.lock   <-- intentionally NOT ignored for contracts
+
+# Planning / scratch files
+Plan.md
+
+# Environment files — may contain secrets; document values in README instead
 .env
+.env.*
+
+# Node
 orchestrator/node_modules
+ops-dashboard/node_modules
