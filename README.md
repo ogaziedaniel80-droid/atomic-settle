@@ -22,12 +22,13 @@ A programmable delivery-versus-payment (DvP) settlement layer for institutional 
 12. [Repository structure](#repository-structure)
 13. [Local development setup](#local-development-setup)
 14. [Testing strategy](#testing-strategy)
-15. [Deployment](#deployment)
-16. [Off-chain services (NestJS)](#off-chain-services-nestjs)
-17. [Operations dashboard (Angular)](#operations-dashboard-angular)
-18. [Roadmap](#roadmap)
-19. [Glossary](#glossary)
-20. [License](#license)
+15. [Testnet deployment](#testnet-deployment)
+16. [Deployment](#deployment)
+17. [Off-chain services (NestJS)](#off-chain-services-nestjs)
+18. [Operations dashboard (Angular)](#operations-dashboard-angular)
+19. [Roadmap](#roadmap)
+20. [Glossary](#glossary)
+21. [License](#license)
 
 ---
 
@@ -255,26 +256,41 @@ This project has **not yet undergone external audit.** Do not deploy to mainnet 
 
 ## Local development setup
 
-**Prerequisites:** Rust toolchain with `wasm32-unknown-unknown` target, Soroban CLI, Node.js 20+, Docker (for local Stellar network).
+**Prerequisites:**
+- Rust toolchain ≥ 1.91 with `wasm32v1-none` target (required by soroban-sdk 27 — note: `wasm32-unknown-unknown` is no longer supported from Rust 1.82+)
+- [stellar CLI v27+](https://github.com/stellar/stellar-cli/releases/tag/v27.0.0)
+- Node.js 20+
+- Docker (for local Stellar network)
 
 ```bash
-# Install Soroban CLI
-cargo install --locked soroban-cli
+# Install Rust and the correct wasm target
+rustup target add wasm32v1-none
+
+# Install stellar CLI (download pre-built binary — building from source is slow)
+# Linux x86_64:
+curl -fsSL -o stellar.tar.gz \
+  https://github.com/stellar/stellar-cli/releases/download/v27.0.0/stellar-cli-27.0.0-x86_64-unknown-linux-gnu.tar.gz
+tar xzf stellar.tar.gz && sudo mv stellar /usr/local/bin/
+
+# Apply the ed25519-dalek pin (soroban-env-host 27 / rand_core version split)
+# Already committed to Cargo.lock — run this if you reset the lockfile:
+cd contracts/settlement-escrow && cargo update "ed25519-dalek@3.0.0" --precise 2.2.0
+cd ../compliance-gate && cargo update "ed25519-dalek@3.0.0" --precise 2.2.0
 
 # Build contracts
 cd contracts/settlement-escrow
-cargo build --target wasm32-unknown-unknown --release
-
-# Run a local Stellar network for development
-soroban network start local
-
-# Deploy to local network
-soroban contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/settlement_escrow.wasm \
-  --network local
+cargo build --target wasm32v1-none --release
 
 # Run contract unit tests
 cargo test
+
+# Run a local Stellar network for development
+stellar network start local
+
+# Deploy to local network
+stellar contract deploy \
+  --wasm target/wasm32v1-none/release/settlement_escrow.wasm \
+  --network local
 
 # Start orchestrator (NestJS)
 cd ../../orchestrator
@@ -294,6 +310,75 @@ npm run start
 - **Integration tests**: full trade lifecycle against a local Soroban network, including the compliance-gate cross-contract call path and simulated compliance failures.
 - **Orchestrator tests**: NestJS unit and e2e tests for instruction matching, event listener correctness (no missed or duplicated settlement events), and anchor integration mocks.
 - **Testnet dry runs**: before any mainnet deployment, run a full trade cycle on Stellar testnet with test institutional counterparties to validate end-to-end behavior under real network conditions (latency, fee estimation, ledger close timing).
+
+## Testnet deployment
+
+### Deployed contracts (Stellar Testnet — Protocol 27, deployed 2026-07-11)
+
+| Contract | Address |
+|---|---|
+| `compliance-gate` | `CCZNLLABH3K6KU2OACOD3OZ2TOF2O24OBEKGHJYXDP24XOZBEGO656QH` |
+| `settlement-escrow` | `CAI5Q5MXCSI3IBMLSNFDPNX2QZMPXJBOAPEZ44DX6235CRUEDXSPD7ZG` |
+| Deployer | `GDMT7L7N5HQHG73QVYZOB5DIWF7OPI5KQTAAQXEK5XWXIKOVQTGF5VGA` |
+
+Explorer links:
+- [compliance-gate on stellar.expert](https://stellar.expert/explorer/testnet/contract/CCZNLLABH3K6KU2OACOD3OZ2TOF2O24OBEKGHJYXDP24XOZBEGO656QH)
+- [settlement-escrow on stellar.expert](https://stellar.expert/explorer/testnet/contract/CAI5Q5MXCSI3IBMLSNFDPNX2QZMPXJBOAPEZ44DX6235CRUEDXSPD7ZG)
+
+### Deploy your own instance
+
+```bash
+# One-command deploy (generates and funds a deployer key automatically):
+./scripts/deploy-testnet.sh
+
+# Reuse an existing stellar key:
+./scripts/deploy-testnet.sh --account my-key-name
+```
+
+The script builds both WASM artifacts, deploys them, and writes `orchestrator/.env.testnet` with all connection details.
+
+### Configure the orchestrator
+
+```bash
+cd orchestrator
+cp ../.env.testnet .env   # or .env.testnet if you prefer
+npm install
+npm run start:dev
+```
+
+### Interact with the deployed contracts directly
+
+```bash
+# Check whitelist status (read-only)
+stellar contract invoke \
+  --id CCZNLLABH3K6KU2OACOD3OZ2TOF2O24OBEKGHJYXDP24XOZBEGO656QH \
+  --source <your-key> --network testnet \
+  -- check --party <ADDRESS> --asset <TOKEN_CONTRACT> --amount 1000
+
+# Whitelist a party for an asset (admin only)
+stellar contract invoke \
+  --id CCZNLLABH3K6KU2OACOD3OZ2TOF2O24OBEKGHJYXDP24XOZBEGO656QH \
+  --source <deployer-key> --network testnet --send=yes \
+  -- add_to_whitelist --party <ADDRESS> --asset <TOKEN_CONTRACT>
+
+# Create a trade
+stellar contract invoke \
+  --id CAI5Q5MXCSI3IBMLSNFDPNX2QZMPXJBOAPEZ44DX6235CRUEDXSPD7ZG \
+  --source <your-key> --network testnet --send=yes \
+  -- init_trade \
+  --trade_id <32_BYTE_HEX> \
+  --party_a <ADDRESS_A> --party_b <ADDRESS_B> \
+  --cash_token <CASH_TOKEN_CONTRACT> --cash_amount 1000000 \
+  --asset_token <ASSET_TOKEN_CONTRACT> --asset_amount 1000 \
+  --compliance_gate CCZNLLABH3K6KU2OACOD3OZ2TOF2O24OBEKGHJYXDP24XOZBEGO656QH \
+  --expiry_ledger <FUTURE_LEDGER>
+
+# Query trade state
+stellar contract invoke \
+  --id CAI5Q5MXCSI3IBMLSNFDPNX2QZMPXJBOAPEZ44DX6235CRUEDXSPD7ZG \
+  --source <your-key> --network testnet \
+  -- get_trade --trade_id <32_BYTE_HEX>
+```
 
 ## Deployment
 
@@ -330,8 +415,9 @@ The orchestrator does not hold custody of funds or have unilateral settlement au
 
 ## Roadmap
 
-- [ ] Complete contract unit and property-based test coverage
-- [ ] Testnet deployment with a single design-partner counterparty pair
+- [x] Contract unit tests: full state machine coverage (13 tests, 8 escrow + 5 compliance-gate)
+- [x] Testnet deployment (Protocol 27, both contracts live — see [Testnet deployment](#testnet-deployment))
+- [ ] Testnet deployment with a single design-partner counterparty pair (real tokens)
 - [ ] External security audit of `settlement-escrow` and `compliance-gate`
 - [ ] Netting engine (multi-party net settlement)
 - [ ] Multi-currency path-payment integration for cross-currency DvP
