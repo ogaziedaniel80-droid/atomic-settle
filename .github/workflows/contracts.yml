@@ -1,0 +1,117 @@
+name: Contracts CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "contracts/**"
+      - "Cargo.toml"
+      - ".github/workflows/contracts.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "contracts/**"
+      - "Cargo.toml"
+      - ".github/workflows/contracts.yml"
+
+env:
+  CARGO_TERM_COLOR: always
+  # Pin the Rust toolchain to keep builds reproducible
+  RUST_TOOLCHAIN: "1.82.0"
+
+jobs:
+  test:
+    name: Test (${{ matrix.contract }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        contract:
+          - settlement-escrow
+          - compliance-gate
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: wasm32v1-none
+
+      - name: Cache Cargo registry and build output
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            contracts/${{ matrix.contract }}/target
+          key: ${{ runner.os }}-cargo-${{ matrix.contract }}-${{ hashFiles(format('contracts/{0}/Cargo.lock', matrix.contract)) }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.contract }}-
+
+      - name: Re-apply ed25519-dalek pin (if lockfile was reset)
+        working-directory: contracts/${{ matrix.contract }}
+        run: |
+          if ! grep -q "ed25519-dalek 2.2.0" Cargo.lock 2>/dev/null; then
+            cargo update "ed25519-dalek@3.0.0" --precise 2.2.0
+          fi
+
+      - name: Run unit tests
+        working-directory: contracts/${{ matrix.contract }}
+        run: cargo test
+
+      - name: Check formatting
+        working-directory: contracts/${{ matrix.contract }}
+        run: cargo fmt --check
+
+      - name: Clippy (warnings as errors)
+        working-directory: contracts/${{ matrix.contract }}
+        run: cargo clippy -- -D warnings
+
+  build-wasm:
+    name: Build WASM (${{ matrix.contract }})
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        contract:
+          - settlement-escrow
+          - compliance-gate
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: wasm32v1-none
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            contracts/${{ matrix.contract }}/target
+          key: ${{ runner.os }}-cargo-wasm-${{ matrix.contract }}-${{ hashFiles(format('contracts/{0}/Cargo.lock', matrix.contract)) }}
+
+      - name: Re-apply ed25519-dalek pin
+        working-directory: contracts/${{ matrix.contract }}
+        run: |
+          if ! grep -q "ed25519-dalek 2.2.0" Cargo.lock 2>/dev/null; then
+            cargo update "ed25519-dalek@3.0.0" --precise 2.2.0
+          fi
+
+      - name: Build release WASM
+        working-directory: contracts/${{ matrix.contract }}
+        run: cargo build --target wasm32v1-none --release
+
+      - name: Upload WASM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.contract }}-wasm
+          path: contracts/${{ matrix.contract }}/target/wasm32v1-none/release/*.wasm
+          retention-days: 7

@@ -1,0 +1,87 @@
+name: Orchestrator CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "orchestrator/**"
+      - ".github/workflows/orchestrator.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "orchestrator/**"
+      - ".github/workflows/orchestrator.yml"
+
+jobs:
+  test:
+    name: Lint, test & build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: atomic_settle
+          POSTGRES_PASSWORD: atomic_settle
+          POSTGRES_DB: atomic_settle
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: orchestrator
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: atomic_settle
+      DB_PASSWORD: atomic_settle
+      DB_DATABASE: atomic_settle
+      DB_SYNC: "true"
+      SOROBAN_RPC_URL: http://localhost:8000/soroban/rpc
+      SOROBAN_NETWORK_PASSPHRASE: "Standalone Network ; February 2017"
+      SETTLEMENT_ESCROW_CONTRACT_ID: PLACEHOLDER
+      COMPLIANCE_GATE_CONTRACT_ID: PLACEHOLDER
+      # Unit/e2e tests mock the Soroban service and do not submit real transactions.
+      # A non-key placeholder satisfies ConfigService without being flagged by secret scanners.
+      # For integration jobs that need a funded key, use ${{ secrets.ORCHESTRATOR_SECRET_KEY }}.
+      ORCHESTRATOR_SECRET_KEY: not-a-real-key-tests-do-not-submit-transactions
+      EVENT_LISTENER_ENABLED: "false"
+      PORT: "3000"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: orchestrator/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests with coverage
+        run: npm run test:cov
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: orchestrator-coverage
+          path: orchestrator/coverage/
+          retention-days: 7
+
+      - name: E2E tests
+        run: npm run test:e2e
+
+      - name: Build
+        run: npm run build
