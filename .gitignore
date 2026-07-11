@@ -16,4 +16,6 @@ Plan.md
 
 # Node
 orchestrator/node_modules
+orchestrator/dist/
 ops-dashboard/node_modules
+ops-dashboard/dist/
