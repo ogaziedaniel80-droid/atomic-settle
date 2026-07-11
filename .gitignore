@@ -10,9 +10,13 @@ test_snapshots/
 # Planning / scratch files
 Plan.md
 
-# Environment files — may contain secrets; document values in README instead
+# Environment files — may contain secrets; document values in .env.example instead
 .env
-.env.*
+.env.local
+.env.testnet
+.env.mainnet
+.env.production
+.env.development
 
 # Node
 orchestrator/node_modules
