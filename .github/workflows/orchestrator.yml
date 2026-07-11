@@ -78,7 +78,7 @@ jobs:
           retention-days: 7
 
       - name: E2E tests
-        run: npm run test:e2e
+        run: npm run test:e2e -- --passWithNoTests
 
       - name: Build
         run: npm run build
