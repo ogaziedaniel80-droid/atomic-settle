@@ -1,0 +1,39 @@
+[workspace]
+resolver = "2"
+members = [
+    "contracts/settlement-escrow",
+    "contracts/compliance-gate",
+]
+
+# Workspace-level profile settings apply to all members unless overridden.
+# Each contract's own Cargo.toml still sets the release profile for WASM builds.
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+lto = true
+debug = false
+strip = true
+panic = "abort"
+codegen-units = 1
+
+# ── Usage ────────────────────────────────────────────────────────────────────
+#
+# Build all contracts:
+#   cargo build --target wasm32v1-none --release
+#
+# Test all contracts:
+#   cargo test
+#
+# Format all contracts:
+#   cargo fmt --all
+#
+# Lint all contracts:
+#   cargo clippy -- -D warnings
+#
+# ── Dependency pin note ──────────────────────────────────────────────────────
+#
+# soroban-env-host 27 pulls in rand_core which causes a version split with
+# ed25519-dalek 3.x. The Cargo.lock files in each contract directory pin
+# ed25519-dalek to 2.2.0. If you reset a lockfile, re-apply with:
+#
+#   cargo update "ed25519-dalek@3.0.0" --precise 2.2.0
